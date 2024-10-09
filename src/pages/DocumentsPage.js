@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Upload, Trash2, Edit2, FileText } from "lucide-react";
 import { Modal } from "antd";
+import { useDropzone } from "react-dropzone";
 
 const initialDocuments = [
   {
@@ -32,19 +33,19 @@ function DocumentsPage() {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [currentDocId, setCurrentDocId] = useState(null);
 
-  const handleUpload = (e) => {
-    e.preventDefault();
-    const file = e.target.files[0];
-    if (file) {
+  const handleDrop = (acceptedFiles) => {
+    acceptedFiles.forEach((file) => {
       const newDoc = {
         id: documents.length + 1,
         name: file.name,
         status: "Pending",
         url: URL.createObjectURL(file),
       };
-      setDocuments([...documents, newDoc]);
-    }
+      setDocuments((prevDocuments) => [...prevDocuments, newDoc]);
+    });
   };
+
+  const { getRootProps, getInputProps } = useDropzone({ onDrop: handleDrop });
 
   const showDeleteModal = (id) => {
     setCurrentDocId(id);
@@ -72,6 +73,10 @@ function DocumentsPage() {
     setIsEditModalVisible(false);
   };
 
+  const handlePreview = (url) => {
+    window.open(url, "_blank"); // Open the document in a new tab
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
@@ -84,21 +89,12 @@ function DocumentsPage() {
         <h1 className="text-3xl font-bold mb-6">My Documents</h1>
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Upload New Document</h2>
-          <div className="flex items-center">
-            <label
-              htmlFor="file-upload"
-              className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded inline-flex items-center"
-            >
-              <Upload className="mr-2" />
-              <span>Choose File</span>
-              <input
-                id="file-upload"
-                type="file"
-                className="hidden"
-                onChange={handleUpload}
-              />
-            </label>
-            <span className="ml-4 text-gray-500">No file chosen</span>
+          <div
+            {...getRootProps({ className: "dropzone border-dashed border-2 border-gray-300 p-4 text-center cursor-pointer" })}
+          >
+            <input {...getInputProps()} />
+            <p className="text-gray-500">Drag and drop files here, or click to select files</p>
+            <Upload className="mt-2 mx-auto" />
           </div>
         </div>
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -143,14 +139,12 @@ function DocumentsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium flex justify-center space-x-4">
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => handlePreview(doc.url)}
                       className="text-blue-600 hover:text-blue-900"
                     >
                       <FileText className="h-5 w-5" />
-                    </a>
+                    </button>
                     <button
                       onClick={() => handleEdit(doc.id, doc.name)}
                       className="text-indigo-600 hover:text-indigo-900"
